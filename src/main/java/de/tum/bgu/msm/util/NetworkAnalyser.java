@@ -92,19 +92,21 @@ public class NetworkAnalyser {
     public static void writeToCsv(String path) {
         try {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), StandardCharsets.UTF_8));
-            bw.write("Id, From, To, Length, Capacity, FreeSpeed, Modes, Lanes, Flow Capacity");
+            bw.write("Issue, Id, From, To, Length, Capacity, FreeSpeed, Modes, Lanes, Flow Capacity");
             bw.newLine();
-            for (Link link : questionableLinks) {
-                StringBuilder oneLine = new StringBuilder();
-                oneLine.append(link.getId()).append(CSV_SEPARATOR);
-                oneLine.append(link.getFromNode().getId()).append(CSV_SEPARATOR);
-                oneLine.append(link.getToNode().getId()).append(CSV_SEPARATOR);
-                oneLine.append(link.getLength()).append(CSV_SEPARATOR);
-                oneLine.append(link.getCapacity()).append(CSV_SEPARATOR);
-                oneLine.append(link.getFreespeed()).append(CSV_SEPARATOR);
-                oneLine.append(link.getAllowedModes()).append(CSV_SEPARATOR);
-                oneLine.append(link.getNumberOfLanes()).append(CSV_SEPARATOR);
-                oneLine.append(link.getFlowCapacityPerSec()).append(CSV_SEPARATOR);
+            for (Map.Entry<String, ArrayList<Link>> entry : possibleBottleneckLinks.entrySet()) {
+                for (Link link : entry.getValue()) {
+                    StringBuilder oneLine = new StringBuilder();
+                    oneLine.append(entry.getKey()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getId()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getFromNode().getId()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getToNode().getId()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getLength()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getCapacity()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getFreespeed()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getAllowedModes()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getNumberOfLanes()).append(CSV_SEPARATOR);
+                    oneLine.append(link.getFlowCapacityPerSec()).append(CSV_SEPARATOR);
 
                     logger.info("Writing link #" + link.getId() + " to file");
                     bw.write(oneLine.toString());
