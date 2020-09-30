@@ -65,7 +65,7 @@ public class NetworkAnalyser {
                         if (!possibleBottleneckLinks.get("lanes").contains(link))
                             possibleBottleneckLinks.get("lanes").add(link);
                     }
-                    if (!possibleBottleneckLinks.get("length").contains(link))
+                    if (!possibleBottleneckLinks.get("lanes").contains(link))
                     logger.info("Adding link #" + link.getId());
                 } else if (link.getNumberOfLanes() - nextLink.getNumberOfLanes() > threshold) {
                     if (possibleBottleneckLinks.get("lanes") == null) {
