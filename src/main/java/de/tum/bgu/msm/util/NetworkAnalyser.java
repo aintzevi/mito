@@ -8,12 +8,16 @@ import org.matsim.core.network.io.MatsimNetworkReader;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NetworkAnalyser {
     private static final Network network = NetworkUtils.createNetwork();
-    private static final ArrayList<Link> questionableLinks = new ArrayList<>();
-    private static final double LENGTH_THRESHOLD = 10000.0;
-    private static final  int LANES_THRESHOLD = 4;
+    private static final Map<String, ArrayList<Link>> possibleBottleneckLinks = new HashMap<>();
+    public static final double LENGTH_THRESHOLD = 10000.0;
+    private static final int LANES_THRESHOLD = 4;
+    private static final double CAPACITY_THRESHOLD = 1800.0;
+    private static final double FREESPEED_THRESHOLD = 15;
 
 
     private static final String CSV_SEPARATOR = "\t";
@@ -33,9 +37,15 @@ public class NetworkAnalyser {
         // Check length of each lane, if less than zero or more than threshold the link needs to be checked 
         for (Link link : network.getLinks().values()) {
             if (link.getLength() < 0 || link.getLength() > threshold) {
-                logger.info("Adding link #" + link.getId());
-                if (!questionableLinks.contains(link))
+                if (possibleBottleneckLinks.get("length") == null) {
+                    ArrayList<Link> questionableLinks = new ArrayList<>();
                     questionableLinks.add(link);
+                    possibleBottleneckLinks.put("length", questionableLinks);
+                } else {
+                    if (!possibleBottleneckLinks.get("length").contains(link))
+                    possibleBottleneckLinks.get("length").add(link);
+                }
+                logger.info("Adding link #" + link.getId());
             }
         }
     }
@@ -43,19 +53,40 @@ public class NetworkAnalyser {
     private static void checkLanes(int threshold) {
         // For each link in the network
         for (Link link : network.getLinks().values()) {
-            // For each link coming out of the second node of the current link
+            // For each link coming out of the "to" node of the current link
             for (Link nextLink : link.getToNode().getOutLinks().values()) {
-                if (Math.abs(nextLink.getNumberOfLanes() - link.getNumberOfLanes()) > threshold) {
-                    for (Link nextToNextLink : nextLink.getToNode().getOutLinks().values()) {
-                        if (Math.abs(nextLink.getNumberOfLanes() - nextToNextLink.getNumberOfLanes()) > threshold) {
-                            logger.info("Adding link #" + link.getId());
-                            if (!questionableLinks.contains(nextLink))
-                                questionableLinks.add(nextLink);
-                        }
+                // Check if any of the two links brings congestion
+                if (nextLink.getNumberOfLanes() - link.getNumberOfLanes() > threshold) {
+                    if (possibleBottleneckLinks.get("lanes") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(link);
+                        possibleBottleneckLinks.put("lanes", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("lanes").contains(link))
+                            possibleBottleneckLinks.get("lanes").add(link);
                     }
+                    logger.info("Adding link #" + link.getId());
+                } else if (link.getNumberOfLanes() - nextLink.getNumberOfLanes() > threshold) {
+                    if (possibleBottleneckLinks.get("lanes") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(link);
+                        possibleBottleneckLinks.put("lanes", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("lanes").contains(link))
+                            possibleBottleneckLinks.get("lanes").add(link);
+                    }
+                    logger.info("Adding link #" + link.getId());
                 }
             }
         }
+    }
+
+    private static void checkCapacity(double threshold) {
+
+    }
+
+    private static void checkFreespeed(double threshold) {
+
     }
 
     public static void writeToCsv(String path) {
@@ -75,9 +106,10 @@ public class NetworkAnalyser {
                 oneLine.append(link.getNumberOfLanes()).append(CSV_SEPARATOR);
                 oneLine.append(link.getFlowCapacityPerSec()).append(CSV_SEPARATOR);
 
-                logger.info("Writing link #" + link.getId() + " to file");
-                bw.write(oneLine.toString());
-                bw.newLine();
+                    logger.info("Writing link #" + link.getId() + " to file");
+                    bw.write(oneLine.toString());
+                    bw.newLine();
+                }
             }
             bw.flush();
             bw.close();
