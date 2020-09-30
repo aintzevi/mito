@@ -43,7 +43,7 @@ public class NetworkAnalyser {
                     possibleBottleneckLinks.put("length", questionableLinks);
                 } else {
                     if (!possibleBottleneckLinks.get("length").contains(link))
-                    possibleBottleneckLinks.get("length").add(link);
+                        possibleBottleneckLinks.get("length").add(link);
                 }
                 logger.info("Adding link #" + link.getId());
             }
@@ -65,15 +65,16 @@ public class NetworkAnalyser {
                         if (!possibleBottleneckLinks.get("lanes").contains(link))
                             possibleBottleneckLinks.get("lanes").add(link);
                     }
+                    if (!possibleBottleneckLinks.get("length").contains(link))
                     logger.info("Adding link #" + link.getId());
                 } else if (link.getNumberOfLanes() - nextLink.getNumberOfLanes() > threshold) {
                     if (possibleBottleneckLinks.get("lanes") == null) {
                         ArrayList<Link> questionableLinks = new ArrayList<>();
-                        questionableLinks.add(link);
+                        questionableLinks.add(nextLink);
                         possibleBottleneckLinks.put("lanes", questionableLinks);
                     } else {
-                        if (!possibleBottleneckLinks.get("lanes").contains(link))
-                            possibleBottleneckLinks.get("lanes").add(link);
+                        if (!possibleBottleneckLinks.get("lanes").contains(nextLink))
+                            possibleBottleneckLinks.get("lanes").add(nextLink);
                     }
                     logger.info("Adding link #" + link.getId());
                 }
@@ -96,20 +97,19 @@ public class NetworkAnalyser {
             bw.newLine();
             for (Map.Entry<String, ArrayList<Link>> entry : possibleBottleneckLinks.entrySet()) {
                 for (Link link : entry.getValue()) {
-                    StringBuilder oneLine = new StringBuilder();
-                    oneLine.append(entry.getKey()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getId()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getFromNode().getId()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getToNode().getId()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getLength()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getCapacity()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getFreespeed()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getAllowedModes()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getNumberOfLanes()).append(CSV_SEPARATOR);
-                    oneLine.append(link.getFlowCapacityPerSec()).append(CSV_SEPARATOR);
 
                     logger.info("Writing link #" + link.getId() + " to file");
-                    bw.write(oneLine.toString());
+                    String oneLine = entry.getKey() + CSV_SEPARATOR +
+                            link.getId() + CSV_SEPARATOR +
+                            link.getFromNode().getId() + CSV_SEPARATOR +
+                            link.getToNode().getId() + CSV_SEPARATOR +
+                            link.getLength() + CSV_SEPARATOR +
+                            link.getCapacity() + CSV_SEPARATOR +
+                            link.getFreespeed() + CSV_SEPARATOR +
+                            link.getAllowedModes() + CSV_SEPARATOR +
+                            link.getNumberOfLanes() + CSV_SEPARATOR +
+                            link.getFlowCapacityPerSec() + CSV_SEPARATOR;
+                    bw.write(oneLine);
                     bw.newLine();
                 }
             }
