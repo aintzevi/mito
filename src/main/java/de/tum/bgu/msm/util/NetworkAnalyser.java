@@ -5,6 +5,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -83,11 +84,67 @@ public class NetworkAnalyser {
     }
 
     private static void checkCapacity(double threshold) {
-
+        // For each link in the network
+        for (Link link : network.getLinks().values()) {
+            // For each link coming out of the "to" node of the current link
+            for (Link nextLink : link.getToNode().getOutLinks().values()) {
+                // Check if any of the two links brings congestion
+                if (nextLink.getCapacity() - link.getCapacity() > threshold) {
+                    if (possibleBottleneckLinks.get("capacity") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(link);
+                        possibleBottleneckLinks.put("capacity", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("capacity").contains(link))
+                            possibleBottleneckLinks.get("capacity").add(link);
+                    }
+                    if (!possibleBottleneckLinks.get("capacity").contains(link))
+                        logger.info("Adding link #" + link.getId());
+                } else if (link.getCapacity() - nextLink.getCapacity() > threshold) {
+                    if (possibleBottleneckLinks.get("capacity") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(nextLink);
+                        possibleBottleneckLinks.put("capacity", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("capacity").contains(nextLink))
+                            possibleBottleneckLinks.get("capacity").add(nextLink);
+                    }
+                    logger.info("Adding link #" + link.getId());
+                }
+            }
+        }
     }
 
     private static void checkFreespeed(double threshold) {
-
+        // For each link in the network
+        for (Link link : network.getLinks().values()) {
+            // For each link coming out of the "to" node of the current link
+            for (Link nextLink : link.getToNode().getOutLinks().values()) {
+                // Check if any of the two links brings congestion
+                if (nextLink.getFreespeed() - link.getFreespeed() > threshold) {
+                    if (possibleBottleneckLinks.get("freespeed") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(link);
+                        possibleBottleneckLinks.put("freespeed", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("freespeed").contains(link))
+                            possibleBottleneckLinks.get("freespeed").add(link);
+                    }
+                    if (!possibleBottleneckLinks.get("freespeed").contains(link))
+                        logger.info("Adding link #" + link.getId());
+                } else if (link.getFreespeed() - nextLink.getFreespeed() > threshold) {
+                    if (possibleBottleneckLinks.get("freespeed") == null) {
+                        ArrayList<Link> questionableLinks = new ArrayList<>();
+                        questionableLinks.add(nextLink);
+                        possibleBottleneckLinks.put("freespeed", questionableLinks);
+                    } else {
+                        if (!possibleBottleneckLinks.get("freespeed").contains(nextLink))
+                            possibleBottleneckLinks.get("freespeed").add(nextLink);
+                    }
+                    logger.info("Adding link #" + link.getId());
+                }
+            }
+        }
     }
 
     public static void writeToCsv(String path) {
@@ -126,10 +183,16 @@ public class NetworkAnalyser {
         logger.info("Reading network");
         // First argument contains the network file
         readNetworkFile(args[0]);
-        logger.info("Checking links' length");
-        checkLength(LENGTH_THRESHOLD);
+
+        logger.info("Checking links' capacity");
+        checkCapacity(CAPACITY_THRESHOLD);
+        logger.info("Checking links' freespeed");
+        checkFreespeed(FREESPEED_THRESHOLD);
         logger.info("Checking number of lanes");
         checkLanes(LANES_THRESHOLD);
+        logger.info("Checking links' length");
+        checkLength(LENGTH_THRESHOLD);
+        
         logger.info("Writing results to .csv");
         // Second argument contains the output folder
         writeToCsv(args[1] + QUESTIONABLE_LINKS_FILE_NAME);
